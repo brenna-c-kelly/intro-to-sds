@@ -1,0 +1,12 @@
+---
+title: 'Module 1: Spatial data'
+author: "Brenna Kelly"
+date: "2024-07-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
