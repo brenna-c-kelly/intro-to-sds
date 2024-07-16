@@ -21,6 +21,7 @@ library(tidyverse)
 
 ```
 
+
 ```{r}
 
 house <- st_read("/Users/brenna/Downloads/snow/snow1/deaths_nd_by_house.shp")
@@ -85,7 +86,7 @@ tm_shape(house) +
 ```
 
 
-before accepting John Snow's theory, cholera was thought to be caused by miasma, or particles in the air
+before John Snow's theory was accepted, cholera was thought to be caused by miasma, or particles in the air
 we'll perform similar procedures as above, but with sewer grates instead of pumps
 
 ```{r}
