@@ -1,5 +1,5 @@
 ---
-title: "02_spatial_functions"
+title: "Module 2: Spatial Functions"
 author: "Brenna Kelly"
 date: "2024-07-16"
 output: html_document
@@ -9,8 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Module 2: Spatial functions
-
+In this module, we'll learn about and practice using spatial functions using the `sf` package.
 
 #### Set-up
 ```{r}
@@ -21,6 +20,13 @@ library(tidyverse)
 
 ```
 
+#### Overview of spatial functions
+
+```{r}
+
+```
+
+#### Practice: 1854 Cholera Outbreak
 
 ```{r}
 
@@ -133,6 +139,11 @@ sewer_map <- tm_shape(house) +
 tmap_arrange(pump_map, sewer_map)
 
 ```
+
+
+
+
+
 
 
 
