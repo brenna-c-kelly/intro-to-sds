@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-In this module, we'll learn about and practice using spatial functions using the `sf` package.
+In this module, we'll learn about and practice using spatial functions with the `sf` package.
 
 #### Set-up
 ```{r}
@@ -30,9 +30,9 @@ library(tidyverse)
 
 ```{r}
 
-house <- st_read("/Users/brenna/Downloads/snow/snow1/deaths_nd_by_house.shp")
-pumps <- st_read("/Users/brenna/Downloads/snow/snow6/pumps.shp")
-sewer <- st_read("/Users/brenna/Downloads/snow/snow7/sewergrates_ventilators.shp")
+house <- st_read("data/deaths_by_household/deaths_nd_by_house.shp")
+pumps <- st_read("data/pumps/pumps.shp")
+sewer <- st_read("data/sewer/sewergrates_ventilators.shp")
 
 # light cleaning
 pumps$name <- ifelse(pumps$name == "Tighborne St Pump\rTighborne St Pump\r",
@@ -98,7 +98,6 @@ we'll perform similar procedures as above, but with sewer grates instead of pump
 ```{r}
 ##    we will make one modification
 # note that there are far more sewer grates than water pumps. Let's calculate the *network* distance
-sewer
 
 sewer_vent <- sewer |>
   filter(ventilator == 1)
@@ -139,12 +138,4 @@ sewer_map <- tm_shape(house) +
 tmap_arrange(pump_map, sewer_map)
 
 ```
-
-
-
-
-
-
-
-
 
