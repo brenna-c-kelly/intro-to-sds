@@ -28,6 +28,11 @@ library(tidyverse)
 
 #### Practice: 1854 Cholera Outbreak
 
+We'll use the famous London cholera outbreak to practice using spatial functions. This data comes from the University of Chicago's [Center for Spatial Data Science](https://geodacenter.github.io/data-and-lab/snow/).  
+- `house`: contains the number of deaths by household and its point location. Note, this dataframe includes a column with distance from the Broad Street pump and distance from the nearest sewer. We'll be doing our own calculations!  
+- `pumps`: contains the point location of each pump and its name.  
+- `sewer`: contains the location of each sewer grate and an indicator for whether it has a ventilator.  
+
 ```{r}
 
 house <- st_read("data/deaths_by_household/deaths_nd_by_house.shp")
