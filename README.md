@@ -1,5 +1,5 @@
 # Introduction to Spatial Data Science
-A workshop prepared for the Population Health Sciences Department at the University of Utah, scheduled for 8/16/24.
+A workshop prepared for the Department of Population Health Sciences at the University of Utah, scheduled for 8/16/24.
 
 In this repository, you'll find three modules:  
 1. Spatial data  
