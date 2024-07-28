@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r message=FALSE, warning=FALSE}
 
-# install.packages(c("sf", "..."))
+# install.packages(c("sf", "tmap"))
 
 library(sf)
 library(tmap)
