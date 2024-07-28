@@ -1,12 +1,369 @@
 ---
-title: 'Module 1: Spatial data'
+title: 'Module 1: Working with spatial data'
 author: "Brenna Kelly"
 date: "2024-07-16"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+```{r message=FALSE, warning=FALSE}
+
+# install.packages(c("sf", "..."))
+
+library(sf)
+library(tmap)
+library(dplyr)
+
+```
+
+  
+## Spatial data are just `simple features`
+
+The `sf` (simple features) package provides a standardized way to encode spatial vector data. With this resource, we can read and write spatial data, perform geometric operations, and transform and project our spatial data. Let's read in our first set of spatial data:  
+
+```{r}
+
+list.files("data/guerry")
+
+```
+
+`Guerry` contains socioeconomic data for 1830 France, collected by Andre-Michel Guerry as "Morality Statistics". There are four types of files in the `guerry` folder, in addition to the documentation:  
+- `dbf`: stores the feature attributes in a tabular format  
+- `prj`: contains the projection and coordinate reference system  
+- `shp`: contains the geometry  
+- `shx`: indexes the geometry  
+
+We read in the data using `st_read` with the file path for the `shp` file. The data is of two classes: `sf` and `data.frame`. Note the `geometry` column in the dataframe, which contains the shape of the data.  
+
+```{r}
+
+guerry <- st_read("data/guerry/guerry.shp")
+
+class(guerry)
+
+head(guerry)
+
+```
+
+We see in the dataframe (and can confirm visually) that these are polygons.
+
+```{r echo = FALSE}
+
+library(tmap)
+tm_shape(guerry) +
+  tm_polygons()
+
+```
+
+Geometry can be as simple as a point, a line, a polygon, a multipolygon, or a collection of these things.
+
+<!-- ![](geometry types.png) -->
+
+```{r, echo = FALSE, warning = FALSE}
+
+# one point
+guerry_center <- st_centroid(guerry[1, ])
+# multiple points
+guerry_centers <- st_centroid(guerry)
+
+# one line
+guerry_centers <- st_centroid(guerry)
+guerry_line <- guerry_centers[1:2, ] |>
+  summarise(do_union = TRUE) |>
+  st_cast("MULTILINESTRING")
+# multiple lines
+guerry_lines <- guerry_centers[1:6, ] |>
+  summarise(do_union = TRUE) |>
+  st_cast("MULTILINESTRING")
+
+# one polygon
+# st_geometry(guerry[1, ])
+# multiple polygons
+seine <- guerry |>
+  filter(Dprtmnt %in% c("Seine", "Seine-et-Marne", 
+                        "Seine-et-Oise"))
+
+# one multipolygon
+finistere <- guerry |>
+  filter(Dprtmnt %in% c("Finistere"))
+# multiple multipolygon
+bretagne <- guerry |>
+  filter(Dprtmnt %in% c("Cotes-du-Nord", "Finistere", 
+                        "Morbihan", "Ille-et-Vilaine"))
+
+```
+
+```{r echo = FALSE}
+
+par(mfrow = c(2, 4))
+plot(st_geometry(guerry_center))
+plot(st_geometry(guerry_line))
+plot(st_geometry(guerry[1, ]))
+plot(st_geometry(finistere))
+
+plot(st_geometry(guerry_centers))
+plot(st_geometry(guerry_lines))
+plot(st_geometry(seine))
+plot(st_geometry(bretagne))
+
+```
+
+## Coordinate Reference Systems
+
+Importantly, every simple feature needs a coordinate reference system (CRS), because while we use two-dimensional coordinates to describe where things are located, Earth is not flat (surprise!). The CRS defines how the Earth is "flattened" for mapping. We could spend several lectures discussing coordinate reference systems, but the key takeaways for our purposes are:  
+- CRS contains the rules for projection and the datum being used (origin point on Earth's surface, unit of coordinates, and orientation).  
+- Difference reference systems exist, and they are designed to optimize different features (shape, distance, area). Your CRS choice should match your analysis needs.  
+- When using multiple datasets, your CRS needs to match.  
+
+```{r}
+
+st_crs(guerry)
+
+```
+
+The `guerry` dataset uses a projected coordinate system, which is optimized for a particular location to minimize visual distortion. Compare against the unprojected WGS84, NAD83 (projected for North America), and the Mercator-projected WGS84. We use `st_transform(, crs = )` to reproject.
+
+```{r}
+
+ntf <- tm_shape(guerry) +
+  tm_polygons() +
+  tm_layout(title = "Nouvelle Triangulation \nFrancaise (Paris)", title.size = 1)
+
+guerry_wgs <- st_transform(guerry, crs = 4326)
+wgs <- tm_shape(guerry_wgs,) +
+  tm_polygons() +
+  tm_layout(title = "World Geodetic \nSystem 1984, \nUnprojected", title.size = 1)
+
+guerry_aea <- st_transform(guerry, crs = st_crs("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +ellps=GRS80 +datum=NAD83"))
+aea <- tm_shape(guerry_aea) +
+  tm_polygons() +
+  tm_layout(title = "North American \nDatum 1983", title.size = 1)
+
+guerry_merc <- st_transform(guerry, crs = 3395)
+merc <- tm_shape(guerry_merc) +
+  tm_polygons() +
+  tm_layout(title = "WGS84 with \nMercator Projection", title.size = 1)
+
+tmap_arrange(ntf, wgs, aea, merc, ncol = 2, nrow = 2)
+dev.off()
+```
+
+
+## Creating simple features
+
+Often you'll find coordinates in a data set, but it hasn't been converted to a simple feature.
+
+```{r}
+
+spiral <- read.csv("data/spiral/spirals.csv")
+
+head(spiral)
+
+```
+
+We could simply plot the x- and y-coordinates, but without a CRS, we cannot combine this with any other information, and we won't get much further use out of the data.
+
+```{r}
+
+plot(spiral$x, spiral$y)
+
+```
+
+To create a simple feature, we use the `st_as_sf` function. This requires us to specify the column names for the coordinates (e.g., x and y, longitude and latitude) and the EPSG code for the coordinate reference system (if you don't know what it should be, it's easily google-able).
+
+```{r}
+
+spiral_sf <- st_as_sf(spiral, coords = c("x", "y"),
+                      crs = 4326)
+
+```
+
+Note that if we did not assign a `crs` to the object, the code would still run. However, if we decide to project the data later on, we will get an error saying we cannot transform an object with a missing CRS We would need to assign a CRS to the object with `st_crs(spiral_sf) <- 4326`. Best practice is to always have a CRS for your sf objects.  
+
+Now that we have our `spiral_sf`, we can plot this feature:
+
+```{r}
+
+tm_shape(spiral_sf) +
+  tm_dots(col = "skyblue", size = 0.5, alpha = 0.75)
+
+```
+
+To save an `sf` object, we use the `st_write` function. Note that long column names may be abbreviated, so it may look different when you read it back it. Unlike `write.csv`, `st_write` will give you an error if you try to overwrite an existing file (use `append = FALSE` to override this).
+
+```{r}
+
+spiral_sf$point_number <- 1:nrow(spiral_sf)
+
+st_write(spiral_sf, "data/spiral/spiral_sf.shp", append = FALSE)
+
+```
+
+We can also create simple features based on existing `sf` objects. We'll demonstrate using a counties in Utah and points contained within counties.
+
+```{r}
+
+utah <- st_read("data/utah/utah.shp")
+utah_points <- st_read("data/utah/utah_points.shp")
+
+```
+
+```{r, echo = FALSE}
+
+tm_shape(utah) +
+  tm_polygons(col = "white") +
+  tm_shape(utah_points) +
+  tm_dots(col = "red", size = 0.25)
+
+```
+
+Let's find the geometric centroid of Salt Lake City using `st_centroid`. We'll create a buffer around the centroid (the units of the distance are determined by the CRS, which you can check using `st_crs(slc_center)$units_gdal`). The buffer is of the type `polygon`.
+
+```{r}
+
+slc <- subset(utah, NAME == "Salt Lake County, Utah")
+
+slc_center <- st_centroid(slc)
+
+slc_center_buff <- st_buffer(slc_center, dist = 10000)
+
+```
+
+```{r echo = FALSE}
+
+tm_shape(slc) +
+  tm_polygons() +
+  tm_shape(st_buffer(slc_center, dist = 10000)) +
+  tm_polygons(col = "pink") +
+  tm_shape(slc_center) +
+  tm_dots(shape = 8, size = 2)
+
+```
+
+Now let's do this for all counties in Utah, and we'll only map the `utah_points` which fall inside these buffers using `st_filter`.
+
+```{r}
+
+utah_centers <- st_centroid(utah)
+
+utah_centers_buff <- st_buffer(utah_centers, dist = 10000)
+
+filtered_pnts <- st_filter(utah_points, utah_centers_buff)
+
+```
+
+To examine the results, we'll make a plot. The simplest way to plot a simple feature is using `plot()` and `st_geometry`. If you use `plot(sf_data)`, you will get a map for every column in the data. `st_geometry` allows you to just access the geometry.
+
+```{r}
+
+# plotting the buffers
+plot(st_geometry(utah))
+plot(st_geometry(utah_centers_buff), col = "pink", add = TRUE)
+
+# and plotting the points within the buffers
+plot(st_geometry(utah))
+plot(st_geometry(filtered_pnts), col = "red", add = TRUE)
+
+```
+
+
+## Optional Exercise
+
+Let's practice working with spatial data using the UK pubs dataset.  
+- Read in the `uk.shp` shapefile and `pubs.csv` file.  
+- Convert the `pubs` dataframe to an sf object, with `crs = 4277`, the geographic coordinates for the UK.  
+- See if there are differences in the CRS for `uk` and `pubs` (you can check manually and/or visually with a plot). If needed, transform the `pubs` to the `uk` CRS.  
+- Choose one district to subset (e.g., LAD24NM == Lancaster, Camden, Cardiff, Sheffield).  
+- Create a 5-km buffer around the area (the units are meters, so use `dist = 5000`).  
+- Using the `st_filter()` function, can you determine whether there are more pubs inside the area or within 5 km of the area?  
+
+```{r}
+
+uk <- st_read("data/uk_pubs/uk.shp")
+pubs <- read.csv("data/uk_pubs/pubs.csv")
+
+
+```
+
+
+
+
+## Exercise Solution
+
+```{r}
+
+uk <- st_read("data/uk_pubs/uk.shp")
+pubs <- read.csv("data/uk_pubs/pubs.csv")
+
+# make spatial
+pubs <- st_as_sf(pubs, coords = c("lon", "lat"),
+                     crs = 4277)
+
+# check for CRS mismatch
+plot(st_geometry(uk))
+plot(st_geometry(pubs), add = TRUE, col = "red")
+
+st_crs(pubs) == st_crs(uk) # FALSE
+
+# transform
+pubs <- st_transform(pubs, crs = st_crs(uk))
+
+
+# plot with tmaps
+tm_shape(uk) +
+  tm_polygons(col = "blue") +
+  tm_shape(pubs) +
+  tm_dots(col = "red")
+
+# plot with base r
+plot(st_geometry(uk))
+plot(st_geometry(pubs), add = TRUE, col = "red")
+```
+
+Now I'll choose a district to study. The question is, are there more pubs within Maidstone or within 5 km of Maidstone.
+
+```{r}
+maidstone <- subset(uk, LAD24NM == "Maidstone")
+
+# buffer around polygon
+maidstone_buffer <- st_buffer(maidstone, dist = 5000)
+# how many pubs are *near* the area
+near_maidstone_pubs <- st_filter(pubs, maidstone_buffer)
+
+# how many pubs are in the area
+maidstone_pubs <- st_filter(pubs, maidstone)
+
+pubs_near_maidstone = (nrow(near_maidstone_pubs) - nrow(maidstone_pubs)) # we want to exclude pubs inside the area
+pubs_in_maidstone = nrow(near_maidstone_pubs)
+
+# are there more pubs within
+pubs_in_maidstone / pubs_near_maidstone
+
+# let's visually inspect
+plot(st_geometry(maidstone_buffer), col = "olivedrab3")
+plot(st_geometry(maidstone), col = "olivedrab4", add = TRUE)
+plot(st_geometry(near_maidstone_pubs), col = "darkgoldenrod3", pch = 17, add = TRUE)
+plot(st_geometry(maidstone_pubs), col = "darkgoldenrod1", pch = 17, add = TRUE)
+
+# with tmaps
+tm_shape(maidstone_buffer) +
+  tm_polygons(col = "olivedrab3", lwd = 0) +
+  tm_shape(maidstone) +
+  tm_polygons(col = "olivedrab4", lwd = 0, alpha = 0.5) +
+  tm_shape(near_maidstone_pubs) +
+  tm_dots(col = "darkgoldenrod3", shape = 17, size = 0.5, alpha = 0.5) +
+  tm_shape(maidstone_pubs) +
+  tm_dots(col = "darkgoldenrod1", shape = 17, size = 0.5, alpha = 0.5)
+
+
+```
+
+There are twice as many pubs (2.03-times) in Maidstone as there are within 5 km of Maidstone.
 

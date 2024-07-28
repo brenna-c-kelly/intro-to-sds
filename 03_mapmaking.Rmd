@@ -11,3 +11,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 https://blog.popdata.org/bivariate-proportional-symbol-maps-1/?utm_source=IPUMS+Emails&utm_campaign=f662eb3ad9-EMAIL_CAMPAIGN_2019_05_31_07_13_COPY_01&utm_medium=email&utm_term=0_a679127ff0-f662eb3ad9-22012645
+
+
+
+
+```{r}
+
+library(tmap)
+tm_shape(guerry) +
+  tm_polygons()
+library(ggplot2)
+ggplot(guerry) +
+  geom_sf()
+
+```
+

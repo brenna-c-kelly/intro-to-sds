@@ -5,7 +5,7 @@ date: "2024-07-16"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -33,7 +33,7 @@ We'll use the famous London cholera outbreak to practice using spatial functions
 - `pumps`: contains the point location of each pump and its name.  
 - `sewer`: contains the location of each sewer grate and an indicator for whether it has a ventilator.  
 
-```{r}
+```{r warning=FALSE}
 
 house <- st_read("data/deaths_by_household/deaths_nd_by_house.shp")
 pumps <- st_read("data/pumps/pumps.shp")
@@ -185,4 +185,34 @@ sewer_map <- tm_shape(house) +
 tmap_arrange(pump_map, sewer_map)
 
 ```
+
+
+
+
+
+```{r}
+library(MASS)
+rpois(n = nrow(house), lambda = 0.50)
+
+house$pop <- rpois(n = nrow(house), lambda = 0.75) + house$deaths + 1
+summary(house$pop)
+
+m <- glm.nb(deaths ~ 1 + offset(log(pop)),
+            data = house)
+house$residual <- m$residuals
+
+tm_shape(house) +
+  tm_dots(col = "residual", style = "cont", size = 0.25)
+
+
+m <- glm.nb(deaths ~ 1 + offset(log(pop)) + dis_bspump,
+            data = house)
+house$residual <- m$residuals
+
+tm_shape(house) +
+  tm_dots(col = "residual", style = "cont", size = 0.25)
+
+
+```
+
 
