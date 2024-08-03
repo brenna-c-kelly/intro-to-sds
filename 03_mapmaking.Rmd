@@ -13,8 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 https://blog.popdata.org/bivariate-proportional-symbol-maps-1/?utm_source=IPUMS+Emails&utm_campaign=f662eb3ad9-EMAIL_CAMPAIGN_2019_05_31_07_13_COPY_01&utm_medium=email&utm_term=0_a679127ff0-f662eb3ad9-22012645
 
 
-
-
 ```{r}
 
 library(tmap)
@@ -25,4 +23,41 @@ ggplot(guerry) +
   geom_sf()
 
 ```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+ca <- st_read("data/california/ca_counties.shp")
+
+tm_shape(ca) +
+  tm_polygons(col = "f_ra", palette = "RdPu", style = "cont", lwd = 0,
+              title = "Females of \nreproductive age")
+tm_shape(ca) +
+  tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0)
+
+
+ca_centers <- st_read("data/california/ca_county_centers.shp")
+
+tm_shape(ca) +
+  tm_polygons(col = "white", lwd = 0.25, title = "") +
+  tm_shape(ca_centers) +
+  tm_dots(col = "f_ra_p", size = "f_ra", scale = 1.5, 
+          palette = "RdPu", style = "cont", legend.is.portrait = FALSE,
+          title = "% of Reproductive Age")
+
+```
+
+
+
+
+```{r}
+
+```
+
+
 
