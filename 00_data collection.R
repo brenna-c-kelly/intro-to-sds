@@ -1,6 +1,8 @@
 
-
-
+library(sf)
+library(tmap)
+library(dplyr)
+library(stringr)
 library(tidycensus)
 
 acs_2020 <- load_variables(year = 2020,
@@ -96,6 +98,15 @@ tm_shape(la) +
   tm_polygons(col = "female_of_ra_perc", palette = "RdPu", style = "cont", lwd = 0, 
               legend.is.portrait = TRUE, title = "Proportion \nof Reproductive Age")
 
+la <- la |>
+  select(!c("county_fips")) |>
+  rename(geoid = GEOID,
+         name = NAME,
+         f_denom = total_female, 
+         f_ra = female_of_ra, 
+         f_ra_p = female_of_ra_perc)
+st_write(la, "data/california/la_tracts.shp")
+
 la_centers <- read.csv("data/california/CenPop2020_Mean_TR06.csv")
 la_centers_sf <- st_as_sf(la_centers, coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
 la_centers_sf$geoid <- paste0(str_pad(la_centers_sf$STATEFP, pad = "0", width = 2, side = "left"),
@@ -111,6 +122,22 @@ tm_shape(la) +
   tm_polygons(col = "white", lwd = 0.25) +
   tm_shape(la_centers_sf) +
   tm_dots(col = "female_of_ra_perc", style = "cont", palette = "RdPu", 
-          size = "total_female", scale = 0.5, alpha = 0.7,
-          legend.is.portrait = TRUE, title = "Proportion \nof Reproductive Age")
+          size = "female_of_ra", scale = 0.5, alpha = 0.7,
+          legend.is.portrait = FALSE, title = "Proportion \nof Reproductive Age")
 
+test <- la_centers_sf |>
+  select(!c("STATEFP", "COUNTYFP", "TRACTCE", "POPULATION", "geoid_county")) |>
+  rename(tract_name = NAME, 
+         f_denom = total_female, 
+         f_ra = female_of_ra, 
+         f_ra_p = female_of_ra_perc)
+
+st_write(test, "data/california/la_centers.shp")
+test <- st_read("data/california/la_centers.shp")
+
+tm_shape(la) +
+  tm_polygons(col = "white", lwd = 0.25) +
+  tm_shape(test) +
+  tm_dots(col = "f_ra_p", style = "cont", palette = "RdPu", 
+          size = "f_ra", scale = 0.5, alpha = 0.7,
+          legend.is.portrait = FALSE, title = "Proportion \nof Reproductive Age")

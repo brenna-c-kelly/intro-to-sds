@@ -153,6 +153,7 @@ merc <- tm_shape(guerry_merc) +
 
 tmap_arrange(ntf, wgs, aea, merc, ncol = 2, nrow = 2)
 dev.off()
+
 ```
 
 

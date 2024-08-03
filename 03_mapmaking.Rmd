@@ -1,5 +1,5 @@
 ---
-title: 'Module 2: Mapmaking'
+title: 'Module 3: Mapmaking'
 author: "Brenna Kelly"
 date: "2024-07-16"
 output: html_document
@@ -9,27 +9,82 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
 
-https://blog.popdata.org/bivariate-proportional-symbol-maps-1/?utm_source=IPUMS+Emails&utm_campaign=f662eb3ad9-EMAIL_CAMPAIGN_2019_05_31_07_13_COPY_01&utm_medium=email&utm_term=0_a679127ff0-f662eb3ad9-22012645
+library(sf)
+library(tmap)
+library(ggpubr)
+library(ggplot2)
+library(ggspatial)
+library(prettymapr)
 
+guerry <- st_read("data/guerry/guerry.shp")
+
+```
+
+There are two main R packages for plotting static maps: [tmap](https://r-tmap.github.io/tmap/) and [ggplot2](https://ggplot2.tidyverse.org/reference/ggsf.html) (R users may be more familiar with ggplot2). With both packages, you can visualize simple feature (sf) objects.
 
 ```{r}
 
-library(tmap)
 tm_shape(guerry) +
   tm_polygons()
-library(ggplot2)
+
 ggplot(guerry) +
   geom_sf()
 
 ```
 
+As you start creating your own maps, you may find you prefer one or the other, but each package has useful features.  
+
+Notice, for instance, that we don't need to specify the type of geometry with ggplot, instead simply using `geom_sf` (unlike tmap, which requires tm_polygon, tm_dots, tm_lines).
 
 ```{r}
+
+guerry_poly <- ggplot(guerry) +
+  geom_sf()
+
+guerry_ln <- st_cast(guerry, "MULTILINESTRING")
+guerry_line <- ggplot(guerry_ln) +
+  geom_sf()
+
+guerry_pt <- st_centroid(guerry)
+guerry_dot <- ggplot(guerry_pt) +
+  geom_sf()
+
+ggarrange(guerry_poly, guerry_line, guerry_dot, nrow = 1, ncol = 3)
+
+```
+
+We can also add labels using `geom_text` (or `geom_label`, if you want a box behind the text, for visibility).
+
+```{r}
+
+ggplot(guerry) +
+  geom_sf() +
+  geom_text(mapping = aes(label = Dprtmnt, geometry = geometry), 
+            stat = "sf_coordinates", position = "identity", size = 4)
+
+ggplot(guerry) +
+  geom_sf() +
+  geom_label(aes(label = Dprtmnt, geometry = geometry), 
+            stat = "sf_coordinates", position = "identity", size = 3)
+
+```
+
+You can also add basemaps with tiles from the ggspatial packages.  
+
+```{r}
+
+ggplot(guerry) +
+  annotation_map_tile(type = "osm", cachedir = "rosm.cache/", zoomin = -1) +
+  geom_sf(aes(fill = Pop1831), lwd = 0) +
+  scale_fill_viridis_c(option = "D")
 
 ```
 
 
+#### Mapping populations  
+As population health scientists, we are often interested in mapping populations. A common approach would be to aggregate the number of cases by geographic unit (e.g., county, hospital referral region) and plot these areal units as polygons:  
 ```{r}
 
 ca <- st_read("data/california/ca_counties.shp")
@@ -37,25 +92,49 @@ ca <- st_read("data/california/ca_counties.shp")
 tm_shape(ca) +
   tm_polygons(col = "f_ra", palette = "RdPu", style = "cont", lwd = 0,
               title = "Females of \nreproductive age")
-tm_shape(ca) +
-  tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0)
 
+tm_shape(ca) +
+  tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0,
+              title = "% of \nreproductive age")
+
+# ca_count_of_ra
+# ca_prop_of_ra
+
+```
+
+However, that approach shows us a map of places, not people. A better method would visually represent the areas based on the populations they contain.  
+
+The Census holds geographic coordinates for [centers of population](https://www.census.gov/geographies/reference-files/time-series/geo/centers-population.html), a really fantastic resource I highly recommend. To create an sf object from these csvs, you would follow similar procedures to what we did in `01_spatial data.R` with the spirals dataset.
+
+When we represent counties with population-weighted centroids scaled by the population size, we get a more accurate representation:  
+
+```{r}
 
 ca_centers <- st_read("data/california/ca_county_centers.shp")
 
 tm_shape(ca) +
   tm_polygons(col = "white", lwd = 0.25, title = "") +
   tm_shape(ca_centers) +
-  tm_dots(col = "f_ra_p", size = "f_ra", scale = 1.5, 
+  tm_dots(col = "f_ra_p", size = "f_ra", scale = 2,
           palette = "RdPu", style = "cont", legend.is.portrait = FALSE,
           title = "% of Reproductive Age")
 
+# ca_prop_of_ra_scaled
+
+# tmap_arrange(ca_count_of_ra, ca_prop_of_ra,
+#              ca_prop_of_ra_scaled)
+
 ```
 
+#### Practice  
 
-
+Create similar maps to what we saw above with California, but for census tracts in Los Angeles County. Compare the polygon and dot maps. How does your interpretation change between maps?
 
 ```{r}
+
+la <- st_read("data/california/la_tracts.shp")
+
+la_centers <- st_read("data/california/la_centers.shp")
 
 ```
 

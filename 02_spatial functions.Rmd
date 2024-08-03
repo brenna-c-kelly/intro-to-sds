@@ -35,9 +35,9 @@ We'll use the famous London cholera outbreak to practice using spatial functions
 
 ```{r warning=FALSE}
 
-house <- st_read("data/deaths_by_household/deaths_nd_by_house.shp")
-pumps <- st_read("data/pumps/pumps.shp")
-sewer <- st_read("data/sewer/sewergrates_ventilators.shp")
+house <- st_read("data/snow/deaths_by_household/deaths_nd_by_house.shp")
+pumps <- st_read("data/snow/pumps/pumps.shp")
+sewer <- st_read("data/snow/sewer/sewergrates_ventilators.shp")
 
 # light cleaning
 pumps$name <- ifelse(pumps$name == "Tighborne St Pump\rTighborne St Pump\r",
