@@ -16,7 +16,6 @@ In this module, we'll learn about and practice using spatial functions with the 
 
 library(sf)
 library(tmap)
-library(units)
 library(tidyverse)
 
 ```
@@ -266,33 +265,5 @@ tmap_arrange(pump_map, sewer_map)
 
 ```
 
-
-
-
-
-```{r}
-library(MASS)
-rpois(n = nrow(house), lambda = 0.50)
-
-house$pop <- rpois(n = nrow(house), lambda = 0.75) + house$deaths + 1
-summary(house$pop)
-
-m <- glm.nb(deaths ~ 1 + offset(log(pop)),
-            data = house)
-house$residual <- m$residuals
-
-tm_shape(house) +
-  tm_dots(col = "residual", style = "cont", size = 0.25)
-
-
-m <- glm.nb(deaths ~ 1 + offset(log(pop)) + dis_bspump,
-            data = house)
-house$residual <- m$residuals
-
-tm_shape(house) +
-  tm_dots(col = "residual", style = "cont", size = 0.25)
-
-
-```
 
 
