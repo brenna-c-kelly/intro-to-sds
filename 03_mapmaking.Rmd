@@ -2,14 +2,17 @@
 title: 'Module 3: Mapmaking'
 author: "Brenna Kelly"
 date: "2024-07-16"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 
 library(sf)
 library(tmap)
@@ -19,6 +22,8 @@ library(ggspatial)
 library(prettymapr)
 
 ```
+
+## `tmap` and `ggplot2`
 
 There are two main R packages for plotting static maps: [tmap](https://r-tmap.github.io/tmap/) and [ggplot2](https://ggplot2.tidyverse.org/reference/ggsf.html) (R users may be more familiar with ggplot2). With both packages, you can visualize simple feature (sf) objects.
 
@@ -86,6 +91,9 @@ The tmap package has many of the same options, but with slightly different synta
 
 ```{r}
 
+house <- st_read("data/clean_data/house.shp")
+pumps <- st_read("data/clean_data/pumps.shp")
+
 tmap_mode("view")
 tm_shape(house) +
   tm_dots(col = "name", style = "cont", 
@@ -95,11 +103,18 @@ tm_shape(house) +
           palette = "Dark2", shape = 17) +
   tm_layout(title = "Nearest water pump to\neach household", main.title.position = "CENTER")
 
+tmap_mode("plot")
+tm_shape(house) +
+  tm_dots(col = "name", style = "cont", 
+          palette = "Dark2", legend.show = FALSE) +
+  tm_shape(pumps) +
+  tm_dots(col = "name", size = 1, title = "Water pump",
+          palette = "Dark2", shape = 17) +
+  tm_layout(title = "Nearest water pump to\neach household", main.title.position = "CENTER")
+
 ```
 
-
-
-#### Mapping populations  
+## Mapping populations  
 As population health scientists, we are often interested in mapping populations. A common approach would be to aggregate the number of cases by geographic unit (e.g., county, hospital referral region) and plot these areal units as polygons:  
 ```{r}
 
@@ -134,7 +149,7 @@ tm_shape(ca) +
 
 ```
 
-#### Practice  
+## Practice  
 
 Create similar maps to what we saw above with California, but for census tracts in Los Angeles County. Compare the polygon and dot maps. How does your interpretation change between maps?
 
@@ -146,5 +161,23 @@ la_centers <- st_read("data/california/la_centers.shp")
 
 ```
 
+
+
+### Practice Solution
+
+```{r}
+
+tm_shape(la) +
+  tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0, 
+              legend.is.portrait = TRUE, title = "Proportion \nof Reproductive Age")
+
+tm_shape(la) +
+  tm_polygons(col = "white", lwd = 0.25) +
+  tm_shape(la_centers) +
+  tm_dots(col = "f_ra_p", style = "cont", palette = "RdPu", 
+          size = "f_ra", scale = 0.5, alpha = 0.7,
+          legend.is.portrait = FALSE, title = "Proportion \nof Reproductive Age")
+
+```
 
 

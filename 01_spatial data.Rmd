@@ -200,7 +200,7 @@ tm_shape(spiral_sf) +
 
 To save an `sf` object, we use the `st_write` function. Note that long column names may be abbreviated, so it may look different when you read it back it. Unlike `write.csv`, `st_write` will give you an error if you try to overwrite an existing file (use `append = FALSE` to override this).
 
-```{r}
+```{r, warning=FALSE}
 
 spiral_sf$point_number <- 1:nrow(spiral_sf)
 
@@ -316,16 +316,15 @@ st_crs(pubs) == st_crs(uk) # FALSE
 # transform
 pubs <- st_transform(pubs, crs = st_crs(uk))
 
+# plot with base r
+plot(st_geometry(uk))
+plot(st_geometry(pubs), add = TRUE, col = "red")
 
 # plot with tmaps
 tm_shape(uk) +
   tm_polygons(col = "blue") +
   tm_shape(pubs) +
   tm_dots(col = "red")
-
-# plot with base r
-plot(st_geometry(uk))
-plot(st_geometry(pubs), add = TRUE, col = "red")
 
 ```
 

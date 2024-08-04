@@ -2,17 +2,21 @@
 title: "Module 2: Spatial Functions"
 author: "Brenna Kelly"
 date: "2024-07-16"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 In this module, we'll learn about and practice using spatial functions with the `sf` package.
 
-#### Set-up
-```{r}
+## Set-up
+```{r message=FALSE, warning=FALSE}
 
 library(sf)
 library(tmap)
@@ -20,7 +24,7 @@ library(tidyverse)
 
 ```
 
-#### Overview of spatial functions
+## Overview of spatial functions
 
 Spatial functions are the spatial data scientist's bread and butter. With these tools, you can create and perform geographic measurements and operations on simple features. I've put an `sf` cheatsheet in the **resources** folder, which provides an explanation of the different functions.  
 
@@ -105,7 +109,7 @@ tm_shape(pubs_uk_poly) +
 
 ```
 
-#### Practice: 1854 Cholera Outbreak
+## Practice: 1854 Cholera Outbreak
 
 We'll use the famous London cholera outbreak to practice using spatial functions. This data comes from the University of Chicago's [Center for Spatial Data Science](https://geodacenter.github.io/data-and-lab/snow/).  
 - `house`: contains the number of deaths by household and its point location. Note, this dataframe includes a column with distance from the Broad Street pump and distance from the nearest sewer. We'll be doing our own calculations!  
