@@ -18,13 +18,13 @@ library(ggplot2)
 library(ggspatial)
 library(prettymapr)
 
-guerry <- st_read("data/guerry/guerry.shp")
-
 ```
 
 There are two main R packages for plotting static maps: [tmap](https://r-tmap.github.io/tmap/) and [ggplot2](https://ggplot2.tidyverse.org/reference/ggsf.html) (R users may be more familiar with ggplot2). With both packages, you can visualize simple feature (sf) objects.
 
 ```{r}
+
+guerry <- st_read("data/guerry/guerry.shp")
 
 tm_shape(guerry) +
   tm_polygons()
@@ -81,6 +81,22 @@ ggplot(guerry) +
   scale_fill_viridis_c(option = "D")
 
 ```
+
+The tmap package has many of the same options, but with slightly different syntax. As you explore your data, you may also like the dynamic `view` feature, which uses [leaflet](https://rstudio.github.io/leaflet/index.html), a popular package for interactive maps:
+
+```{r}
+
+tmap_mode("view")
+tm_shape(house) +
+  tm_dots(col = "name", style = "cont", 
+          palette = "Dark2", legend.show = FALSE) +
+  tm_shape(pumps) +
+  tm_dots(col = "name", size = 0.5, title = "Water pump",
+          palette = "Dark2", shape = 17) +
+  tm_layout(title = "Nearest water pump to\neach household", main.title.position = "CENTER")
+
+```
+
 
 
 #### Mapping populations  

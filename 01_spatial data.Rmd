@@ -15,7 +15,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r message=FALSE, warning=FALSE}
 
-# install.packages(c("sf", "tmap"))
+# install.packages(c("tmap", "ggpubr", "ggplot2", 
+#                    "ggspatial", "prettymapr",
+#                    "tidyr", "stringr", "dplyr"))
 
 library(sf)
 library(tmap)
@@ -56,7 +58,6 @@ We see in the dataframe (and can confirm visually) that these are polygons.
 
 ```{r echo = FALSE}
 
-library(tmap)
 tm_shape(guerry) +
   tm_polygons()
 
@@ -289,7 +290,6 @@ Let's practice working with spatial data using the UK pubs dataset.
 
 uk <- st_read("data/uk_pubs/uk.shp")
 pubs <- read.csv("data/uk_pubs/pubs.csv")
-
 
 ```
 
