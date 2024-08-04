@@ -97,9 +97,6 @@ tm_shape(ca) +
   tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0,
               title = "% of \nreproductive age")
 
-# ca_count_of_ra
-# ca_prop_of_ra
-
 ```
 
 However, that approach shows us a map of places, not people. A better method would visually represent the areas based on the populations they contain.  
@@ -118,11 +115,6 @@ tm_shape(ca) +
   tm_dots(col = "f_ra_p", size = "f_ra", scale = 2,
           palette = "RdPu", style = "cont", legend.is.portrait = FALSE,
           title = "% of Reproductive Age")
-
-# ca_prop_of_ra_scaled
-
-# tmap_arrange(ca_count_of_ra, ca_prop_of_ra,
-#              ca_prop_of_ra_scaled)
 
 ```
 

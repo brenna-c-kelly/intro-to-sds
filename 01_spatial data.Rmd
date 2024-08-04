@@ -326,11 +326,13 @@ tm_shape(uk) +
 # plot with base r
 plot(st_geometry(uk))
 plot(st_geometry(pubs), add = TRUE, col = "red")
+
 ```
 
 Now I'll choose a district to study. The question is, are there more pubs within Maidstone or within 5 km of Maidstone.
 
 ```{r}
+
 maidstone <- subset(uk, LAD24NM == "Maidstone")
 
 # buffer around polygon
