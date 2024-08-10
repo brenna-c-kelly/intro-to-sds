@@ -116,6 +116,7 @@ tm_shape(house) +
 
 ## Mapping populations  
 As population health scientists, we are often interested in mapping populations. A common approach would be to aggregate the number of cases by geographic unit (e.g., county, hospital referral region) and plot these areal units as polygons:  
+
 ```{r}
 
 ca <- st_read("data/california/ca_counties.shp")
@@ -132,7 +133,7 @@ tm_shape(ca) +
 
 However, that approach shows us a map of places, not people. A better method would visually represent the areas based on the populations they contain.  
 
-The Census holds geographic coordinates for [centers of population](https://www.census.gov/geographies/reference-files/time-series/geo/centers-population.html), a really fantastic resource I highly recommend. To create an sf object from these csvs, you would follow similar procedures to what we did in `01_spatial data.R` with the spirals dataset.
+The Census holds geographic coordinates for [centers of population](https://www.census.gov/geographies/reference-files/time-series/geo/centers-population.html), a really fantastic resource I highly recommend. To create an sf object from these csvs, you would follow similar procedures to what we did in `01_spatial data.R` with the spirals dataset.  
 
 When we represent counties with population-weighted centroids scaled by the population size, we get a more accurate representation:  
 
@@ -149,24 +150,13 @@ tm_shape(ca) +
 
 ```
 
-Create similar maps to what we saw above with California, but for census tracts in Los Angeles County. Compare the polygon and dot maps. How does your interpretation change between maps?
+- Create similar maps to what we saw above with California, but for census tracts in Los Angeles County. Compare the polygon and dot maps. How does your interpretation change between maps?
 
 ```{r}
 
 la <- st_read("data/california/la_tracts.shp")
 
 la_centers <- st_read("data/california/la_centers.shp")
-
-tm_shape(la) +
-  tm_polygons(col = "f_ra_p", palette = "RdPu", style = "cont", lwd = 0, 
-              legend.is.portrait = TRUE, title = "Proportion \nof Reproductive Age")
-
-tm_shape(la) +
-  tm_polygons(col = "white", lwd = 0.25) +
-  tm_shape(la_centers) +
-  tm_dots(col = "f_ra_p", style = "cont", palette = "RdPu", 
-          size = "f_ra", scale = 0.5, alpha = 0.7,
-          legend.is.portrait = FALSE, title = "Proportion \nof Reproductive Age")
 
 ```
 
