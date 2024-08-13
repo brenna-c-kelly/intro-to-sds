@@ -264,7 +264,7 @@ To examine the results, we'll make a plot. The simplest way to plot a simple fea
 ```
 
 
-## Optional Exercise
+## Exercise
 
 Let's practice working with spatial data using the UK pubs dataset.  
 - Read in the `uk.shp` shapefile and `pubs.csv` file.  
