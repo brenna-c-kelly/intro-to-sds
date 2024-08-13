@@ -1,30 +1,273 @@
 ---
 title: "Module 2 Solutions"
 author: "Brenna Kelly"
-date: "2024-08-10"
-output: html_document
+date: "2024-07-16"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
-## R Markdown
+In this module, we'll learn about and practice using spatial functions with the `sf` package.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Set-up
+```{r message=FALSE, warning=FALSE}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+library(sf)
+library(tmap)
+library(tidyverse)
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
+## Overview of spatial functions
 
-You can also embed plots, for example:
+Spatial functions are the spatial data scientist's bread and butter. With these tools, you can create and perform geographic measurements and operations on simple features. I've put an `sf` cheatsheet in the **resources** folder, which provides an explanation of the different functions.  
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Let's use the `uk_pubs` dataset to explore the possibilities with spatial functions.  
+
+```{r}
+
+uk <- st_read("data/uk_pubs/uk.shp")
+pubs <- read.csv("data/uk_pubs/pubs.csv")
+
+# make spatial
+pubs <- st_as_sf(pubs, coords = c("lon", "lat"),
+                     crs = 4277)
+pubs <- st_transform(pubs, crs = st_crs(uk))
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Let's say we're interested in the spatial pattern of pubs in the UK. As it is, this data doesn't provide much insight:
+
+```{r}
+
+tm_shape(uk) +
+  tm_polygons(col = "white") +
+  tm_shape(pubs) +
+  tm_dots(col = "orange", alpha = 0.5)
+
+```
+
+If we want to see which district each pub is in, we could use `st_intersects`, which gives us the index of the `uk` polygon which the `pubs` point is contained in. This function becomes a bit more useful when using a spatial join:  
+
+```{r}
+
+st_intersects(pubs, uk)[1:5]
+
+pubs_uk <- st_join(pubs, uk, join = st_intersects)
+pubs_uk[1:5, ]
+
+```
+
+Notice that the `uk` columns have beedn added to the `pubs` columns and geometry. We can now aggregate the pubs by district, merge with the `uk` polygons (dropping the point geometry), and map the results:
+
+```{r}
+
+pubs_uk_agg <- pubs_uk |> 
+  count(LAD24NM) |>
+  rename(pub_count = n)
+pubs_uk_poly <- merge(uk, st_drop_geometry(pubs_uk_agg), by = "LAD24NM")
+
+tm_shape(pubs_uk_poly) +
+  tm_polygons(col = "pub_count", style = "cont", palette = "viridis", lwd = 0,
+              title = "Pub Count by LAD") +
+  tm_layout(legend.position = c(0.7, 0.8), frame = FALSE)
+
+```
+
+We might be surprised to see that London has only an average amount of pubs (n = 55). This may be true for the number of pubs — but what if we calculated the density of pubs?
+
+```{r}
+
+st_crs(pubs_uk_poly)$units_gdal # confirm units
+
+pubs_uk_poly$land_area <- st_area(pubs_uk_poly)
+
+pubs_uk_poly$pubs_per_10sqkm <- pubs_uk_poly$pub_count / (pubs_uk_poly$land_area / 10000)
+
+pubs_uk_poly[which(pubs_uk_poly$pubs_per_10sqkm == max(pubs_uk_poly$pubs_per_10sqkm)), ]
+
+tm_shape(pubs_uk_poly) +
+  tm_polygons(col = "pubs_per_10sqkm", style = "cont", palette = "viridis", lwd = 0) +
+  tm_layout(legend.position = c(0.7, 0.8), frame = FALSE)
+
+```
+
+London has by far the highest density — and by comparison, the rest of the UK is washed out. Let's look at the variation with a log-transformation:
+
+```{r}
+
+tm_shape(pubs_uk_poly) +
+  tm_polygons(col = "pubs_per_10sqkm", style = "log10", palette = "-viridis", lwd = 0,
+              title = expression("Pubs per 10 km" ^ 2)) +
+  tm_layout(legend.position = c(0.7, 0.8), frame = FALSE)
+
+```
+
+## Practice: 1854 Cholera Outbreak
+
+We'll use the famous London cholera outbreak to practice using spatial functions. This data comes from the University of Chicago's [Center for Spatial Data Science](https://geodacenter.github.io/data-and-lab/snow/).  
+- `house`: contains the number of deaths by household and its point location. Note, this dataframe includes a column with distance from the Broad Street pump and distance from the nearest sewer. We'll be doing our own calculations!  
+- `pumps`: contains the point location of each pump and its name.  
+- `sewer`: contains the location of each sewer grate and an indicator for whether it has a ventilator.  
+
+```{r warning=FALSE}
+
+house <- st_read("data/snow/deaths_by_household/deaths_nd_by_house.shp")
+pumps <- st_read("data/snow/pumps/pumps.shp")
+sewer <- st_read("data/snow/sewer/sewergrates_ventilators.shp")
+
+# light cleaning
+pumps$name <- ifelse(pumps$name == "Tighborne St Pump\rTighborne St Pump\r",
+                     "Tighborne St Pump", pumps$name)
+
+# sort the pumps by their ID
+pumps <- pumps |>
+  arrange(ID)
+
+```
+
+Let's assume that people only use the water pump nearest to their household. We'll identify which water pump is nearest to each household using the `st_nearest_feature` function. Note that this gives us the index of the nearest pump. If we want the name of (or any other information about) the pumps, we need to merge this back to the `house` dataframe. We need to remove the pump geometry using `st_drop_geometry` in order to make this merge. (The `pumps$ID` column is identical to the index, so we make the join on this column.)
+
+```{r}
+
+house$nearest_pump <- st_nearest_feature(house, pumps)
+summary(house$nearest_pump) # index, not name
+
+house <- merge(house, st_drop_geometry(pumps),
+               by.x = "nearest_pump", by.y = "ID")
+
+```
+
+Let's map this information, coloring the households based on the nearest water pump.
+
+```{r}
+
+tm_shape(house) +
+  tm_dots(col = "name", style = "cont", 
+          palette = "Dark2", legend.show = FALSE) +
+  tm_shape(pumps) +
+  tm_dots(col = "name", size = 1, title = "Water pump",
+          palette = "Dark2", shape = 17) +
+  tm_layout(title = "Nearest water pump to\neach household", main.title.position = "CENTER")
+
+```
+
+Now that each household is assigned to a pump, we can aggregate the number of deaths by pump. Do you think we found the guilty party?
+
+```{r}
+
+deaths_by_pump <- aggregate(house$deaths_nr, by = list(house$name), FUN = sum)
+deaths_by_pump
+
+```
+
+Let's now calculate the distance from each household to the Broad Street pump using `st_distance`. Since we are only interested in this pump, we'll exclude the others. Note that `st_distance(house, pumps)` would tell us how far *each* household was from *each* pump, with `14816 = 1852 * 8` values. You can probably imagine this becomes computationally expensive as we scale up the size of our analysis.
+
+We'll create a map of distance to the Broad Street pump, but we'll also plot the household location proportionally to the number of deaths in that household. For good measure, we'll also plot the Broad Street pump itself.
+
+```{r}
+house$distance_to_bsp <- st_distance(house, pumps[which(pumps$name == "Broad St Pump"), ])
+
+tm_shape(house) +
+  tm_dots(col = "distance_to_bsp", style = "cont", size = "deaths", palette = "viridis",
+          legend.show = FALSE) +
+  tm_shape(pumps, filter = pumps$ID == 1) +
+  tm_dots(col = "red", size = 1, shape = 17)
+
+```
+
+How would you interpret this map? Do you think this is conclusive evidence that the cholera outbreak could be linked to the Broad Street pump?  
+
+
+Let's consider another explanation. Before John Snow's theory was accepted, cholera was thought to bs spread by miasma, or particles in the air. We'll perform a similar analysis as above, but this time with sewer grates instead of pumps.
+
+Plot the data and see if you can spot a problem:
+
+```{r}
+
+tm_shape(sewer) +
+  tm_dots(col = "red", size = 0.25, alpha = 0.75)
+
+```
+
+In the case of the cholera pump, we were looking for one culprit. There are far more sewer grates than water pumps. Fortunately we can make one exclusion — because the proposed mechanism is miasma, we are only concerned about sewer grates with a ventilator:
+
+```{r}
+
+# convert to a factor
+sewer$ventilator <- as.factor(sewer$ventilator)
+
+tm_shape(sewer) +
+  tm_dots(col = "ventilator", size = 0.25, alpha = 0.75, palette = "Dark2")
+
+sewer_vent <- sewer |>
+  filter(ventilator == 1)
+
+```
+
+We'll make one modification to our analysis. We don't want to calculate distance from sewer grates, but *how many* sewer grates are near households. Let's say if a household is within 100 meters of the grate, it's a potential exposure. We can make this calculation using `st_is_within_distance`, which returns a list of sewer indices for each household.
+
+```{r}
+
+v_sewers <- st_is_within_distance(house, sewer_vent, dist = 100, sparse = TRUE)
+
+v_sewers[1] # the household with index 1 is within 100 meters of sewers with indices 9, 20, 21, 28, and 29
+
+```
+
+We'll calculate the length of each list and combine this result with the `house` dataframe. Finally, we can plot the number of sewer grate ventilators within 100 meters of each household.
+
+```{r}
+
+v_sewers_count <- sapply(v_sewers, length)
+house <- cbind(house, v_sewers_count)
+
+# and plot
+tm_shape(house) +
+  tm_dots(col = "v_sewers_count", style = "cont", palette = "inferno", 
+          title = "Ventilators \nwithin 100m") +
+  tm_shape(sewer_vent) +
+  tm_dots(col = "red", shape = 15, size = 0.25)
+
+```
+
+What do you make of this map? How does it compare to the Broad Street pump map?  
+
+Check if the number of sewer grate ventilators is correlated with the number of cholera deaths.
+
+```{r}
+cor.test(house$v_sewers_count, house$deaths)
+```
+ 
+ How does this compare to the correlation between distance to the Broad Street pump and cholera deaths?
+ 
+```{r}
+cor.test(house$distance_to_bsp, house$deaths)
+```
+
+Finally, let's map the number of household deaths with the two proposed mechanisms for cholera spread.
+
+```{r}
+
+pump_map <- tm_shape(house) +
+  tm_dots(col = "black", style = "cont", alpha = 0.8, size = "deaths") +
+  tm_shape(pumps, filter = pumps$ID == 1) +
+  tm_dots(col = "red", size = 1, shape = 17)
+
+sewer_map <- tm_shape(house) +
+  tm_dots(col = "black", style = "cont", alpha = 0.8, size = "deaths") +
+  tm_shape(sewer_vent) +
+  tm_dots(col = "red", shape = 15, size = 0.25)
+
+tmap_arrange(pump_map, sewer_map)
+
+```
+
+
+
