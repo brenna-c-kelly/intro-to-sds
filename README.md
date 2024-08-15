@@ -11,7 +11,7 @@ These modules are designed to be taught along with a lecture. We will work throu
 **Module 1. Spatial data**  
 This module gives a brief introduction to spatial data and getting started with the `sf` package in R. We work with spatial point and polygon datasets, create sf objects, and review essential features of spatial data (e.g., coordinate reference systems).  
 
-An option exercise is provided at the end of this module in which we practice with UK district polygons and point locations of pubs. We create an sf object from the pub coordinates, transform the CRS, and practice spatial filtering. Students choose one district, create a 5-km buffer, and examine the number of pubs within the district and nearby the district.    
+An optional exercise is provided at the end of this module in which we practice with UK district polygons and point locations of pubs. We create an sf object from the pub coordinates, transform the CRS, and practice spatial filtering. Students choose one district, create a 5-km buffer, and examine the number of pubs within the district and nearby the district.    
 
 **Module 2. Spatial functions**  
 In this module, spatial functions are introduced with the UK pubs data. To practice, we examine a classic case study in spatial epidemiology: the 1854 Broad Street cholera outbreak. Using John Snow's survey data, we calculate the nearest water pump to each household to identify the culprit. We then calculate distance to the Broad Street Pump and determine it's correlation with household deaths. Maps are produced at each step.  
